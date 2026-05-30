@@ -1,0 +1,94 @@
+Absolutely. Here’s the practical recap for running end-to-end from UOW-1.
+
+Use env.template as source of truth.
+
+1) Core variables (always)
+
+ORCH_BEARER_TOKEN: token required for UOW-1 API auth
+PORT: UOW-1 API port (default 3000)
+UOW1_USE_IN_MEMORY: false for durable file-backed runtime (recommended)
+UOW1_PERSIST_ROOT_DIR: where UOW-1 durable state is stored
+UOW1_ENABLE_PUBLISH_STAGE: default publish behavior for unified pipeline (true or false)
+2) UOW-2 (script generation provider)
+
+UOW2_REQUIRE_REAL_PROVIDER: true for real provider mode, false for mock fallback
+UOW2_OLLAMA_BASE_URL
+UOW2_OLLAMA_MODEL
+Optional fallback:
+UOW2_OLLAMA_CLOUD_BASE_URL
+UOW2_OLLAMA_CLOUD_API_KEY
+3) UOW-3 (media providers)
+
+UOW3_REQUIRE_REAL_PROVIDER: true for real mode
+At least one stock source key:
+UOW3_PEXELS_API_KEY or UOW3_PIXABAY_API_KEY
+Optional base URLs:
+UOW3_PEXELS_BASE_URL
+UOW3_PIXABAY_BASE_URL
+Optional AI image endpoint:
+UOW3_POLLINATIONS_BASE_URL
+4) UOW-4 packaging provider
+
+UOW4_REQUIRE_REAL_PROVIDER: true for real artifact resolution
+One of:
+UOW4_ARTIFACT_PROVIDER_LOCAL_BASE_URL
+Or cloud pair:
+UOW4_ARTIFACT_PROVIDER_CLOUD_BASE_URL
+UOW4_ARTIFACT_PROVIDER_CLOUD_API_KEY
+5) UOW-4 publishing (only needed if publishing enabled)
+
+UOW4_REQUIRE_REAL_PUBLISHER: optional strict enforcement
+UOW4_YOUTUBE_PUBLISH_BASE_URL
+Auth mode A (API key):
+UOW4_YOUTUBE_PUBLISH_API_KEY
+Auth mode B (OAuth refresh flow):
+UOW4_YOUTUBE_OAUTH_CLIENT_ID
+UOW4_YOUTUBE_OAUTH_CLIENT_SECRET
+UOW4_YOUTUBE_OAUTH_REFRESH_TOKEN
+Optional:
+UOW4_YOUTUBE_OAUTH_TOKEN_URL (default already set in template)
+UOW4_YOUTUBE_OAUTH_SCOPE
+6) Optional platform-foundation hooks
+
+UOW5_ENABLE_RUNTIME_HOOKS
+UOW5_ARTIFACT_ROOT_DIR
+How to run the whole pipeline
+
+
+1.Set env vars in your terminal session (PowerShell example):
+$env:ORCH_BEARER_TOKEN="dev-local-token"
+$env:UOW1_USE_IN_MEMORY="false"
+$env:UOW1_PERSIST_ROOT_DIR="artifacts/uow1-runtime"
+$env:UOW1_ENABLE_PUBLISH_STAGE="false"   # default; can override per request
+
+$env:UOW2_REQUIRE_REAL_PROVIDER="true"
+$env:UOW2_OLLAMA_BASE_URL="http://localhost:11434"
+$env:UOW2_OLLAMA_MODEL="llama3"
+
+$env:UOW3_REQUIRE_REAL_PROVIDER="true"
+$env:UOW3_PEXELS_API_KEY="your-pexels-key"
+
+$env:UOW4_REQUIRE_REAL_PROVIDER="true"
+$env:UOW4_ARTIFACT_PROVIDER_LOCAL_BASE_URL="http://localhost:9000"
+
+2. Start UOW-1 server:
+cmd /c npm run dev
+
+3. Start unified pipeline run:
+$headers = @{ Authorization = "Bearer dev-local-token" }
+$body = @{
+  topic = "future robotics"
+  hashtags = @("ai","robotics")
+  platformProfile = "tiktok"
+  platforms = @("tiktok","youtube-shorts","instagram-reels")
+  enablePublishing = $true   # per-run override
+} | ConvertTo-Json -Depth 5
+
+$start = Invoke-RestMethod -Method Post -Uri "http://localhost:3000/v1/pipeline/runs/start" -Headers $headers -ContentType "application/json" -Body $body
+$start
+
+4.Check unified pipeline status:
+Invoke-RestMethod -Method Get -Uri "http://localhost:3000/v1/pipeline/runs/$($start.runId)/status" -Headers $headers
+
+5.Check persistence health:
+Invoke-RestMethod -Method Get -Uri "http://localhost:3000/v1/health/persistence"

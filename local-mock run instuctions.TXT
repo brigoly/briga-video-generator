@@ -1,0 +1,29 @@
+$env:ORCH_BEARER_TOKEN="dev-local-token"
+$env:PORT="3000"
+$env:UOW1_USE_IN_MEMORY="false"
+$env:UOW1_PERSIST_ROOT_DIR="artifacts/uow1-runtime"
+$env:UOW1_ENABLE_PUBLISH_STAGE="false"
+
+$env:UOW2_REQUIRE_REAL_PROVIDER="false"
+$env:UOW3_REQUIRE_REAL_PROVIDER="false"
+$env:UOW4_REQUIRE_REAL_PROVIDER="false"
+$env:UOW4_REQUIRE_REAL_PUBLISHER="false"
+
+$env:UOW5_ENABLE_RUNTIME_HOOKS="true"
+$env:UOW5_ARTIFACT_ROOT_DIR="artifacts"
+
+Start server:
+cmd /c npm run dev
+
+#Run pipeline:
+$headers = @{ Authorization = "Bearer dev-local-token" }
+$body = @{
+topic = "future robotics"
+hashtags = @("ai","robotics")
+platformProfile = "tiktok"
+platforms = @("tiktok","youtube-shorts","instagram-reels")
+enablePublishing = $false
+} | ConvertTo-Json -Depth 5
+
+$start = Invoke-RestMethod -Method Post -Uri "http://localhost:3000/v1/pipeline/runs/start" -Headers $headers -ContentType "application/json" -Body $body
+Invoke-RestMethod -Method Get -Uri "http://localhost:3000/v1/pipeline/runs/$($start.runId)/status" -Headers $headers

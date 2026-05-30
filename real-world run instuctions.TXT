@@ -1,0 +1,57 @@
+$env:ORCH_BEARER_TOKEN="dev-local-token"
+$env:PORT="3000"
+$env:UOW1_USE_IN_MEMORY="false"
+$env:UOW1_PERSIST_ROOT_DIR="artifacts/uow1-runtime"
+$env:UOW1_ENABLE_PUBLISH_STAGE="true"
+
+$env:UOW2_REQUIRE_REAL_PROVIDER="true"
+$env:UOW2_OLLAMA_BASE_URL="http://localhost:11434"
+$env:UOW2_OLLAMA_MODEL="llama3"
+$env:UOW2_OLLAMA_CLOUD_BASE_URL=""
+$env:UOW2_OLLAMA_CLOUD_API_KEY=""
+
+$env:UOW3_REQUIRE_REAL_PROVIDER="true"
+$env:UOW3_PEXELS_API_KEY="YOUR_PEXELS_KEY"
+$env:UOW3_PIXABAY_API_KEY=""
+$env:UOW3_PEXELS_BASE_URL="https://api.pexels.com"
+$env:UOW3_PIXABAY_BASE_URL="https://pixabay.com"
+$env:UOW3_POLLINATIONS_BASE_URL="https://image.pollinations.ai"
+
+$env:UOW4_REQUIRE_REAL_PROVIDER="true"
+$env:UOW4_ARTIFACT_PROVIDER_LOCAL_BASE_URL="YOUR_ARTIFACT_PROVIDER_URL"
+$env:UOW4_ARTIFACT_PROVIDER_CLOUD_BASE_URL=""
+$env:UOW4_ARTIFACT_PROVIDER_CLOUD_API_KEY=""
+
+$env:UOW4_REQUIRE_REAL_PUBLISHER="true"
+$env:UOW4_YOUTUBE_PUBLISH_BASE_URL="YOUR_YOUTUBE_PUBLISH_ADAPTER_URL"
+
+#Option A: API key auth
+$env:UOW4_YOUTUBE_PUBLISH_API_KEY="YOUR_YOUTUBE_PUBLISH_API_KEY"
+
+#Option B: OAuth refresh auth (leave API key empty if using this)
+$env:UOW4_YOUTUBE_PUBLISH_API_KEY=""
+$env:UOW4_YOUTUBE_OAUTH_TOKEN_URL="https://oauth2.googleapis.com/token"
+$env:UOW4_YOUTUBE_OAUTH_CLIENT_ID="YOUR_CLIENT_ID"
+$env:UOW4_YOUTUBE_OAUTH_CLIENT_SECRET="YOUR_CLIENT_SECRET"
+$env:UOW4_YOUTUBE_OAUTH_REFRESH_TOKEN="YOUR_REFRESH_TOKEN"
+$env:UOW4_YOUTUBE_OAUTH_SCOPE="https://www.googleapis.com/auth/youtube.upload"
+
+$env:UOW5_ENABLE_RUNTIME_HOOKS="true"
+$env:UOW5_ARTIFACT_ROOT_DIR="artifacts"
+
+#Start server:
+cmd /c npm run dev
+
+#Run pipeline with publish enabled:
+$headers = @{ Authorization = "Bearer dev-local-token" }
+$body = @{
+topic = "future robotics"
+hashtags = @("ai","robotics")
+platformProfile = "tiktok"
+platforms = @("tiktok","youtube-shorts","instagram-reels")
+enablePublishing = $true
+} | ConvertTo-Json -Depth 5
+
+$start = Invoke-RestMethod -Method Post -Uri "http://localhost:3000/v1/pipeline/runs/start" -Headers $headers -ContentType "application/json" -Body $body
+Invoke-RestMethod -Method Get -Uri "http://localhost:3000/v1/pipeline/runs/$($start.runId)/status" -Headers $headers
+Invoke-RestMethod -Method Get -Uri "http://localhost:3000/v1/health/persistence"

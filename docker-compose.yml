@@ -1,0 +1,32 @@
+version: "3.9"
+services:
+  uow1-api:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./:/app
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - ORCH_BEARER_TOKEN=dev-local-token
+      - STATUS_CACHE_TTL_SECONDS=3
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=orchestration
+      - POSTGRES_PASSWORD=orchestration
+      - POSTGRES_DB=orchestration
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"

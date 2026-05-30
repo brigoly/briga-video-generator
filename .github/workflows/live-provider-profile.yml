@@ -1,0 +1,42 @@
+name: Live Provider Profile
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"
+
+jobs:
+  live-profile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      RUN_LIVE_PROVIDER_TESTS: "true"
+      UOW2_OLLAMA_BASE_URL: ${{ secrets.UOW2_OLLAMA_BASE_URL }}
+      UOW2_OLLAMA_MODEL: ${{ secrets.UOW2_OLLAMA_MODEL }}
+      UOW3_PEXELS_API_KEY: ${{ secrets.UOW3_PEXELS_API_KEY }}
+      UOW3_PIXABAY_API_KEY: ${{ secrets.UOW3_PIXABAY_API_KEY }}
+      UOW3_PEXELS_BASE_URL: ${{ secrets.UOW3_PEXELS_BASE_URL }}
+      UOW3_PIXABAY_BASE_URL: ${{ secrets.UOW3_PIXABAY_BASE_URL }}
+      UOW3_POLLINATIONS_BASE_URL: ${{ secrets.UOW3_POLLINATIONS_BASE_URL }}
+      UOW4_ARTIFACT_PROVIDER_LOCAL_BASE_URL: ${{ secrets.UOW4_ARTIFACT_PROVIDER_LOCAL_BASE_URL }}
+      UOW4_ARTIFACT_PROVIDER_CLOUD_BASE_URL: ${{ secrets.UOW4_ARTIFACT_PROVIDER_CLOUD_BASE_URL }}
+      UOW4_ARTIFACT_PROVIDER_CLOUD_API_KEY: ${{ secrets.UOW4_ARTIFACT_PROVIDER_CLOUD_API_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run live provider profile
+        run: npm run test:live
